@@ -12,13 +12,13 @@
 #include <linux/mc146818rtc.h>
 #include <linux/memblock.h>
 #include <linux/module.h>
+#include<linux/moduleparam.h>
 #include <linux/sched.h>
 #include <linux/timer.h>
 #include <linux/types.h>
 #include <linux/mm.h>
 #include <linux/highmem.h>
 #include <linux/vmalloc.h>
-
 #include "arch.h"
 #include "cmds.h"
 #include "stat.h"
@@ -52,6 +52,11 @@ static int lk_open(struct inode *inode, struct file *filp);
 static int lk_release(struct inode *inode, struct file *filep);
 static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 static int lk_mmap(struct file *filp, struct vm_area_struct *vma);
+
+static char *cpuinfo ;
+module_param(cpuinfo, charp, 0000);
+static char *meminfo ;
+module_param(meminfo, charp, 0000);
 
 static const struct file_operations lk_fops = {
   .open = lk_open,
@@ -674,7 +679,8 @@ static int __init lk_init(void)
   err_dev = device_create(lk_class, NULL, MKDEV(lk_major, 0), NULL, LK_DEVICE_NAME);
 
   printk(KERN_INFO "INIT: register device at major %d\n", lk_major);
-
+  printk(KERN_INFO "%s\n", meminfo) ;
+  printk(KERN_INFO "%s\n", cpuinfo) ;
   return 0;
 }
 
