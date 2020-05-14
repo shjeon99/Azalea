@@ -4,7 +4,7 @@ ifeq ($(TARGET),)
 endif
 
 obj-m := lk.o
-lk-y += lkernel.o
+lk-y += lkernel.o resource.o
 
 PWD     := $(shell pwd)
 CC      := gcc

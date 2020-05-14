@@ -2,7 +2,13 @@
 #define __LKERNEL_H__
 
 #define PAGE_4K             (0x1000)
-#define CONFIG_PARAM_NUM    7
+
+#define CONFIG_PARAM_NUM    4
+#define PARM_CPU	0
+#define PARM_MEM 	1
+#define PARM_IMAGE  	2
+#define PARM_KERN32 	3 
+ 
 #define SECTOR				512
 
 #define AZ_PARAM            10
@@ -12,6 +18,9 @@
 
 #define CPU_ON				100
 #define CPU_OFF				110
+#define CPU_ALL_ON		120
+#define	CPU_ALL_OFF		130
+
 #define IO_REMAP			300
 
 #define TOTAL_COUNT_OFFSET	0x83
