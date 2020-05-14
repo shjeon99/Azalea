@@ -20,6 +20,6 @@ cpulist=`comm -3 apic.list cpu.list 2>/dev/null | awk '{printf "%d,", $1}'`
 #echo $cpulist
 #echo "insmod ../sideloader/lk/lk.ko meminfo=\"$mem_start,$mem_end\" cpuinfo=\"$cpulist\""
 insmod ../sideloader/lk/lk.ko meminfo="$mem_start,$mem_end" cpuinfo="$cpulist"
-#rm apic.dat apic.dsl 
+rm apic.dat apic.dsl apic.list cpu.list 
  
 

@@ -21,7 +21,7 @@ char mem[]="0x100000000,0x343fffffff" ;
 
 typedef enum {FALSE = 0, TRUE} boolean;
 
-#define MASK_SIZE    ( (MAX_CORE/sizeof(unsigned long))+1)
+//#define MASK_SIZE    ( (MAX_CORE/sizeof(unsigned long))+1)
 
 typedef struct a_cpumask {
 	unsigned long bits[MASK_SIZE] ;

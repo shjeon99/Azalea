@@ -12,12 +12,11 @@
 #define PML4_OFFSET                 (0x08)
 #define APIC_OFFSET                 (0x10)
 #define CPU_START_OFFSET            (0x18)
-#define CPU_END_OFFSET							(0x20)
+#define SHARED_MEMORY_OFFSET				(0x20)
 #define MEMORY_START_OFFSET					(0x28)
 #define MEMORY_END_OFFSET						(0x30)
 #define QEMU_OFFSET                 (0x3E)
-#define SHARED_MEM_OFFSET						(0x48)
-#define OFFLOAD_BITMAP_OFFSET				(0x50)
+#define OFFLOAD_BITMAP_OFFSET				(0x40)
 
 // TO BE DELETED
 #define MAX_LOG_COUNT               (16383)
@@ -37,7 +36,7 @@
 #define MEMORYS_PER_NODE            (10)
 
 // Share Memory Layout
-#define UNIKERNEL_START             (6)
+#define UNIKERNEL_START             (42)
 #define SHARED_MEMORY_SIZE          (2)     // 2GB (unit: GB), DO NOT MODIFY
 #define CHANNEL_START_OFFSET        (0)     // DO NOT MODIFY
 #define CHANNEL_SIZE                (1)		// 1GB (unit: GB)
@@ -51,10 +50,9 @@
 #define CONFIG_PML4_ADDR        		(BOOT_ADDR + META_OFFSET + PML4_OFFSET)
 #define CONFIG_APIC_ADDR        		(BOOT_ADDR + META_OFFSET + APIC_OFFSET)
 #define CONFIG_CPU_START        		(BOOT_ADDR + META_OFFSET + CPU_START_OFFSET)
-#define CONFIG_CPU_END          		(BOOT_ADDR + META_OFFSET + CPU_END_OFFSET)
+#define CONFIG_SHARED_MEM		     		(BOOT_ADDR + META_OFFSET + SHARED_MEMORY_OFFSET)
 #define CONFIG_MEM_START        		(BOOT_ADDR + META_OFFSET + MEMORY_START_OFFSET)
 #define CONFIG_MEM_END          		(BOOT_ADDR + META_OFFSET + MEMORY_END_OFFSET)
-#define CONFIG_SHARED_MEM			(BOOT_ADDR + META_OFFSET + SHARED_MEM_OFFSET)
 #define CONFIG_IO_BITMAP						(BOOT_ADDR + META_OFFSET + OFFLOAD_BITMAP_OFFSET)
 
 #endif  /* __ARCH_H__ */

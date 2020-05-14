@@ -383,14 +383,10 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     *((unsigned long *) (bladdr + META_OFFSET + PML4_OFFSET)) = g_pml_addr;
     *((unsigned long *) (bladdr + META_OFFSET + APIC_OFFSET)) = APIC_DEFAULT_PHYS_BASE;
     *((unsigned long *) (bladdr + META_OFFSET + CPU_START_OFFSET)) = core_start;
-    *((unsigned long *) (bladdr + META_OFFSET + CPU_END_OFFSET)) = 40 ;
-    //*((unsigned long *) (bladdr + META_OFFSET + CPU_END_OFFSET)) = core_end;
+    *((unsigned long *) (bladdr + META_OFFSET + SHARED_MEMORY_OFFSET)) = (memory_shared_addr>>30) ;
     *((unsigned long *) (bladdr + META_OFFSET + MEMORY_START_OFFSET)) = memory_start;
     *((unsigned long *) (bladdr + META_OFFSET + MEMORY_END_OFFSET)) = memory_end;
     *((unsigned long *) (bladdr + META_OFFSET + QEMU_OFFSET)) = 0;
-    *((unsigned long *) (bladdr + META_OFFSET + SHARED_MEM_OFFSET)) = (memory_shared_addr>>30);
-
-     printk(KERN_INFO "DEBUG %lx %d", memory_shared_addr,  memory_shared_addr>>30);
 
     {
 		a_cpumask_t  cpumask ;

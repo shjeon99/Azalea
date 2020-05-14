@@ -61,35 +61,28 @@ void Main(int boot_mode)
 {
   int xloc = 46, yloc = 0;
 
- 	g_ukid = (*((int*) CONFIG_UKID_ADDR));
-	g_vcon_addr = CONFIG_SHARED_MEMORY + VCON_START_OFFSET + (g_ukid * PAGE_SIZE_4K);
-	g_cpu_start = (*((QWORD*) CONFIG_CPU_START));
-	g_cpu_end = (*((QWORD*) CONFIG_CPU_END));
-	g_cpu_size = g_cpu_start;
-	g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET)) << 30;
-	g_memory_end = (*(QWORD*) (CONFIG_MEM_END + CONFIG_PAGE_OFFSET)) << 30;
-	g_shared_memory = ((QWORD) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30;
-  //g_shared_memory = (*((QWORD*) CONFIG_CPU_END)) ;
-
-	g_io_bitmap = (QWORD) CONFIG_IO_BITMAP+CONFIG_PAGE_OFFSET ;
-
   if (boot_mode == 0) { // AP mode
     while(g_ap_ready == 0)
       pause();
     main_for_ap();
   }
+ 	g_ukid = (*((int*) CONFIG_UKID_ADDR));
+  g_vcon_addr = CONFIG_SHARED_MEMORY + VCON_START_OFFSET + (g_ukid * PAGE_SIZE_4K);
+  g_cpu_start = (*((QWORD*) CONFIG_CPU_START));
+	g_shared_memory = (*((QWORD*) CONFIG_SHARED_MEM)) << 30 ;
+	g_cpu_size = g_cpu_start;
+	g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET)) << 30;
+	g_memory_end = (*(QWORD*) (CONFIG_MEM_END + CONFIG_PAGE_OFFSET)) << 30;
+
+	g_io_bitmap = (QWORD) CONFIG_IO_BITMAP+CONFIG_PAGE_OFFSET ;
 
   kernel_pagetables_init(CONFIG_KERNEL_PAGETABLE_ADDRESS);
 
   lk_print_xy(0, yloc++, "IA-32e C language kernel started.............[Pass]");
-	while(1) ;
-
   lk_print_xy(0, yloc++, "(ID: %d, VCON: 0x%q)", g_ukid, g_vcon_addr);
   lk_print_xy(0, yloc++, "(CPU_NUM: %d)", g_cpu_start);
+  lk_print_xy(0, yloc++, "(SHARED: %d)", g_shared_memory>>30);
   lk_print_xy(0, yloc++, "(MEMORY_START: %d GB,MEMORY_END: %d GB)", g_memory_start>>30, g_memory_end>>30);
-
-	while(1);
- 
 	{
 	QWORD *bitmap  ;
 	bitmap = (QWORD*) g_io_bitmap ;
@@ -98,8 +91,7 @@ void Main(int boot_mode)
   lk_print_xy(0, yloc++, "(SHARED_MEMORY: %q)", bitmap[1]);
   lk_print_xy(0, yloc++, "(SHARED_MEMORY: %q)", bitmap[2]);
   lk_print_xy(0, yloc++, "(SHARED_MEMORY: %q)", bitmap[3]);
-
- 	}  
+ 	} 
 
   lk_print_xy(0, yloc++, "Init Kernel Page Tables .....................[Pass]");
   store_init_stat(INIT_IA32E_START_STAT);
@@ -199,8 +191,8 @@ void Main(int boot_mode)
 
 #ifdef	OFFLOAD_ENABLE
   // init offload console channel
- // if(init_console_channel() == TRUE) {
- if (FALSE) {
+  if(init_console_channel() == TRUE) {
+ //if (FALSE) {
   
     cs_boot_msg_print(yloc);
 
