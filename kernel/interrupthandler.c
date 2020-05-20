@@ -11,6 +11,7 @@
 
 #define INTR_CNT 256
 
+extern void HALT() ;
 extern unsigned int shutdown_kernel;
 extern QWORD g_memory_start;
 extern BOOL g_console_proxy_flag;    // Console proxy availability flag 
@@ -135,10 +136,17 @@ void ipi_handler(int irq_no, QWORD rip)
 
   send_eoi(irq_no) ;
 
-  if ( irq_no == 49 )
-	shutdown_kernel = 1 ;
-  else
-	printk("ipi recieved %d %d\n", irq_no, get_apic_id()) ;
+  if ( irq_no != 49 )
+	{
+		printk("<%d> ipi recieved %d %d\n", irq_no, get_apic_id()) ;
+		send_eoi(irq_no) ;
+		return ;
+	}
+	
+	lk_print("shutdown core : %d\n", get_papic_id()) ;
+
+	disable_software_local_apic() ;
+	HALT() ;
 
 /*
   disable_software_local_apic() ;
@@ -150,7 +158,7 @@ void ipi_handler(int irq_no, QWORD rip)
 	__asm__ __volatile__("hlt") ;
 	}
 */
-  send_eoi(irq_no);
+  //send_eoi(irq_no);
 }
 
 /*

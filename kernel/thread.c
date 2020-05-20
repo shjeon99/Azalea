@@ -47,6 +47,23 @@ atomic_t g_thread_cnt;
 
 static void *tcb_base_addr;
 
+
+
+inline static void flush_cache(void)
+{
+  asm volatile ("wbinvd" ::: "memory");
+}
+
+void HALT()
+{
+  disable_interrupt();
+  flush_cache() ;
+
+  for (;;) {
+			__asm__ __volatile__("hlt") ;
+  }
+}
+
 /**
  * @brief Check if input core_id is allowed on target TCB
  * @param t - target TCB

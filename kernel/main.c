@@ -22,7 +22,7 @@
 #include "console_function.h"
 #include "console_mmap.h"
 
-#define	OFFLOAD_ENABLE
+//#define	OFFLOAD_ENABLE
 
 static void main_for_ap(void);
 BOOL start_ap(void);
@@ -37,21 +37,6 @@ extern QWORD g_memory_start;
 extern QWORD g_memory_end;
 extern QWORD g_shared_memory;
 extern QWORD g_io_bitmap ;
-
-inline static void flush_cache(void)
-{
-  asm volatile ("wbinvd" ::: "memory");
-}
-
-void HALT()
-{
-  disable_interrupt();
-  flush_cache() ;
-
-  for (;;) {
-    hlt();
-  }
-}
 
 /**
  * @brief IA-32e mode main

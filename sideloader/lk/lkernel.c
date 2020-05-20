@@ -78,13 +78,30 @@ static int lk_open(struct inode *inode, struct file *filp)
 /**
  * send APIC IPI
  */
+
 static int apic_send_ipi(unsigned int dest_shorthand, unsigned int dest, int vector)
 {
   unsigned send_status = 0, accept_status = 0;
 
   printk(KERN_DEBUG "send_ipi (%d)\n", dest);
 
-  x2apic_write32(APIC_REGISTER_ICR_LOWER, (APIC_TRIGGER_MODE_EDGE | APIC_LEVEL_ASSERT |
+  apic_icr_write((APIC_TRIGGER_MODE_EDGE | APIC_LEVEL_ASSERT |
+                 APIC_DESTINATION_MODE_PHYSICAL | APIC_DELIVERY_MODE_FIXED |
+                 49), dest);
+
+	mdelay(10) ;
+	send_status = safe_apic_wait_icr_idle();
+  accept_status = (apic_read(APIC_ESR) & 0xEF);
+
+
+   if (send_status)
+     printk(KERN_INFO "APIC never delievered\n");
+   if (accept_status)
+     printk(KERN_INFO "APIC delivery error (%x)\n", accept_status);
+/*
+	x2apic_wrmsr_fence() ;
+
+  x2apic_write(APIC_REGISTER_ICR_LOWER, (APIC_TRIGGER_MODE_EDGE | APIC_LEVEL_ASSERT |
                  APIC_DESTINATION_MODE_PHYSICAL | APIC_DELIVERY_MODE_FIXED |
                  49), dest);
 
@@ -93,12 +110,18 @@ static int apic_send_ipi(unsigned int dest_shorthand, unsigned int dest, int vec
   printk("send %d, accept %d\n", send_status, accept_status);
 
   if (!send_status && !accept_status)
-    pr_debug("ipi send failed (dest : %d), (vector : %d)\n", dest, vector);
+    printk(KERN_INFO "ipi send failed (dest : %d), (vector : %d)\n", dest, vector);
   else
-    pr_debug("ipi send success (dest : %d), (vector : %d)\n", dest, vector);
+    printk(KERN_INFO "ipi send success (dest : %d), (vector : %d)\n", dest, vector);
+*/
+
 
   return 0;
 }
+
+
+
+
 
 /**
  * wake up secondary cpu
@@ -223,6 +246,7 @@ int init_unikernel_resources(const unsigned short *g_param)
 		return -1;
 	}
 
+  printk(KERN_INFO "====init_unikernel_resource =====" ); 
   print_unikernel_info() ;
 
 #if 0   
@@ -264,7 +288,7 @@ int init_unikernel_resources(const unsigned short *g_param)
   printk(KERN_INFO "AZ_PARAM: memory_start_addr: %lx\n", (unsigned long) memory_start_addr);
   printk(KERN_INFO "AZ_PARAM: g_total: %d, g_kernel32: %d\n", (int) g_total, (int) g_kernel32);
 
-  return 0;
+  return ukid ;
 }
 //==============================
 
@@ -494,7 +518,9 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		for ( i = 0 ; i < cnt ; i ++ )
 		{
 	  	apic_send_ipi(0x00, corelist[i], 49) ;
-		} 	
+		} 
+		free_unikernel(id) ;
+	
 	}		
 		break ;
 
