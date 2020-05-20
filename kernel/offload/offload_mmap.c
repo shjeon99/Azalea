@@ -9,8 +9,7 @@
 int g_offload_initialization_flag;
 static channel_t *g_offload_channels;
 static int g_n_offload_channels;
-static int g_n_nodes;
-int g_node_id;
+//static int g_n_nodes;
 int g_channel_size = 0;
 
 QWORD g_io_bitmap ;
@@ -57,40 +56,12 @@ BOOL init_offload_channel(QWORD *iobitmap)
 	QWORD offload_channel_base_va = 0;
 	QWORD *p_node_id = NULL;
 	
-	QWORD local_channel_no = 0 ;
-
 	int i = 0;
 
-
-  {
-  QWORD bitmask = 1 ; 
-  QWORD local_channel = 0 ; 
-  int index = 0 ; 
-  int i=0, j=0;
-
-  for ( i = 0 ; i < MASK_SIZE ; i ++ )
-  {
-      bitmask = 1 ; 
-      for ( j = 0 ; j < sizeof(QWORD)-1 ; j ++ ) 
-      {   
-            if ((iobitmap[i] & bitmask) > 0)
-              {   
-                  lk_print("channel_no %d\n", local_channel) ; 
-                  local_channels_no[index++] = local_channel ;
-              }   
-            local_channel ++ ; 
-            bitmask = (bitmask << 1) ;
-      }   
-  }
-  }
-
-	while(1);
-
-/*
-	lk_print("Shared memmory start: %q \n", (QWORD) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30);
-	lk_print("Shared memmory end  : %q \n", ((QWORD) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30) + 0x40000000);
- */
-	g_offload_channels = (channel_t *) ((QWORD) OFFLOAD_CHANNEL_STRUCT_VA);
+	//lk_print("Shared memmory start: %q \n", (QWORD) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30);
+	//lk_print("Shared memmory end  : %q \n", ((QWORD) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30) + 0x40000000);
+	
+  g_offload_channels = (channel_t *) ((QWORD) OFFLOAD_CHANNEL_STRUCT_VA);
 
 	// set io offload channel info va
 	offload_channel_info_va = (QWORD) (OFFLOAD_CHANNEL_INFO_VA);
@@ -111,16 +82,21 @@ BOOL init_offload_channel(QWORD *iobitmap)
 	g_n_offload_channels = * ((QWORD *)(offload_channel_info_va) + 1);
 	n_ipages = *((QWORD *)(offload_channel_info_va) + 2);
 	n_opages =  *((QWORD *)(offload_channel_info_va) + 3);
+
+#if 0
 	g_n_nodes = *((QWORD *)(offload_channel_info_va) + 4);
 	p_node_id = (QWORD *)(offload_channel_info_va + sizeof(QWORD) * 5);
 	g_node_id = (int) *p_node_id;
 	(*p_node_id)++;
-
 	g_node_id = get_offload_id();
+#endif
 
-	lk_print("#node %d, #ch %d, #ipage %d, #opage %d, #node id %d\n", g_n_nodes, g_n_offload_channels, n_ipages, n_opages, g_node_id);
+	lk_print("#ch %d, #ipage %d, #opage %d\n", g_n_offload_channels, n_ipages, n_opages);
+
 	// initialize offload channel
-	g_channel_size = g_n_offload_channels / g_n_nodes;
+  //g_channel_size = g_n_offload_channels / g_n_nodes;
+
+  g_channel_size = 0 ;
 
   {
 	QWORD bitmask = 1 ;
@@ -142,11 +118,11 @@ BOOL init_offload_channel(QWORD *iobitmap)
 						bitmask = (bitmask << 1) ;
 			}
 	}
+  g_channel_size = index ;
 
-  while(1) ;
-
-	for ( i = 0 ; i < index ; i ++ ){
+	for ( i = 0 ; i < g_channel_size ; i ++ ){
 		offload_channels_offset = local_channels_no[i] ;
+		lk_print("offload_channel_offset %d\n", offload_channels_offset) ;
 		
 	  init_channel(&g_offload_channels[offload_channels_offset]);
     cur_channel = &g_offload_channels[offload_channels_offset];
@@ -196,6 +172,6 @@ BOOL init_offload_channel(QWORD *iobitmap)
  */
 channel_t *get_offload_channel(int n_requested_channel)
 {
-  return (&(g_offload_channels[g_node_id * g_channel_size + get_apic_id()]));
+  return (&(g_offload_channels[local_channels_no[get_apic_id()]]));
 }
 

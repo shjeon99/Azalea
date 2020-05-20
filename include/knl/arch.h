@@ -36,7 +36,7 @@
 #define MEMORYS_PER_NODE            (10)
 
 // Share Memory Layout
-#define UNIKERNEL_START             (42)
+//#define UNIKERNEL_START             (42)
 #define SHARED_MEMORY_SIZE          (2)     // 2GB (unit: GB), DO NOT MODIFY
 #define CHANNEL_START_OFFSET        (0)     // DO NOT MODIFY
 #define CHANNEL_SIZE                (1)		// 1GB (unit: GB)

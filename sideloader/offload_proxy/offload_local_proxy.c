@@ -56,6 +56,9 @@ typedef struct job_mutex {
 //thread_pool_t *g_pool[MAX_NODE];
 thread_pool_t *g_pool[OFFLOAD_MAX_CHANNEL];
 
+
+unsigned long mem_start = 0, mem_end = 0 ;
+
 /**
  * @brief memcpy by sizeof(unsigned long) 
  * @param destination, source, size 
@@ -310,8 +313,8 @@ void cmd(channel_t *cs)
         for (i = 0; i < g_n_channels; i++) {
           ocq = (cs + i)->out_cq;
           icq = (cs + i)->in_cq;
-          if((i%g_n_channels_per_node == 0)&& (i != 0))
-            printf("\n");
+//          if((i%g_n_channels_per_node == 0)&& (i != 0))
+//            printf("\n");
           printf("queue state(%03d): [p->u(%3d): h:%3d t:%3d] [u->p(%3d): h:%3d t:%3d]\n", i, cq_avail_data(ocq), ocq->head, ocq->tail, cq_avail_data(icq), icq->head, icq->tail);
         }
         break;
@@ -319,8 +322,8 @@ void cmd(channel_t *cs)
       // show thread pool status
       case 't':
         for (i = 0; i < g_n_channels; i++) {
-          if((i%g_n_channels_per_node == 0)&& (i != 0))
-            printf("\n");
+//          if((i%g_n_channels_per_node == 0)&& (i != 0))
+//            printf("\n");
           if(g_pool[i] != NULL)
             printf("thread pool(%02d): #threads: %d, #pending jobs: %d \n", i, (int) get_thread_count(g_pool[i]), (int) get_job_count(g_pool[i]));
         }
@@ -362,12 +365,13 @@ int main(int argc, char *argv[])
   int i = 0;
   unsigned long status;
   pthread_t *threads_offload_watch;
+	FILE *fp = NULL ;
 
   unsigned long unikernels_mem_size = 0;
 
   if (argc != 9) {
     printf("usage: ./offload_local_proxy -o <no elements> -i <no elements> -c"
-	   " <no channels per node> -n <no nodes>\n");
+	   " <no total cores> -n <no nodes>\n");
     exit(1);
   }
 
@@ -382,7 +386,17 @@ int main(int argc, char *argv[])
 
   g_n_channels = g_n_channels_per_node * g_n_nodes;
 
-  unikernels_mem_size = mmap_unikernels_memory(g_n_nodes);
+  fp = fopen("/sys/azalea/meminfo", "r") ;
+  if ( fp == NULL ) 
+	{
+			printf("/dev/lk open error or /sys/azalea/meminfo open failed\n") ;
+			return -1 ;
+	}
+ 
+  fscanf(fp, "%ld %ld", &mem_start, &mem_end ) ;
+	fclose(fp) ;
+
+  unikernels_mem_size = mmap_unikernels_memory();
 
   if(unikernels_mem_size == 0) 
 	  goto __exit; 

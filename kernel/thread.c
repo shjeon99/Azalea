@@ -159,7 +159,7 @@ void thread_init(void)
     g_global_tcb_list.count++;
 
     g_global_thread_list[i + MAX_PROCESSOR_COUNT] = tcb;
-
+		
     store_tcb_info(i + MAX_PROCESSOR_COUNT, tcb);
   }
 

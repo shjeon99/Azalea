@@ -3,6 +3,9 @@
 
 #include "arch.h"
 
+extern unsigned long mem_start, mem_end ;
+
+#define UNIKERNEL_START         ((mem_start))
 #define UNIKERNELS_MEM_BASE_PA  ((unsigned long) UNIKERNEL_START << 30)
 #define SHARED_MEM_BASE_PA      (((unsigned long)(UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30)
 #define CONFIG_CHANNEL_PA       (((unsigned long) (UNIKERNEL_START-SHARED_MEMORY_SIZE+CHANNEL_START_OFFSET)) << 30)

@@ -29,6 +29,8 @@ int g_n_threads;
 int g_n_nodes;
 int start_index;
 
+unsigned long mem_start, mem_end ;
+
 /**
  * @brief console local proxy thread
  * @param arg contains channels and channel number for this thread 
@@ -152,6 +154,17 @@ int main(int argc, char *argv[])
   opages = ocq_elements * CQ_ELE_PAGE_NUM + 1; // payload = CQ_ELE_PAGE_NUM pages, metadata = 1 page
   ipages = icq_elements * CQ_ELE_PAGE_NUM + 1;
   g_n_channels = N_CHANNEL;
+	FILE *fp = NULL ;
+
+  fp = fopen("/sys/azalea/meminfo", "r") ;
+  if ( fp == NULL )
+  {
+     printf("/dev/lk open error or /sys/azalea/meminfo open failed\n") ;
+     return -1 ;
+  }
+ 
+  fscanf(fp, "%ld %ld", &mem_start, &mem_end ) ;
+  fclose(fp) ; 
 
   if(!mmap_unikernel_memory(start_index))
     goto __exit;

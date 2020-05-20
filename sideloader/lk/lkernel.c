@@ -351,12 +351,14 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     // Ioremap for log memory
     g_log = ioremap(memory_shared_addr + LOG_START_OFFSET + LOG_LENGTH, LOG_SIZE);
+
     if (g_log == NULL) {
       printk (KERN_INFO "AZ_LOADING: g_log ioremap error\n");
       return -EINVAL;
     }
     memset(g_log, 0, LOG_SIZE);
-    printk (KERN_INFO "AZ_LOADING: g_log ioremap success!!: %lx\n", (unsigned long) g_log);
+    
+		printk (KERN_INFO "AZ_LOADING: g_log ioremap success!!: %lx\n", (unsigned long) g_log);
  
     // 3. Copy bootloader and metadata into memory
     // copy image file into the lkbin variable

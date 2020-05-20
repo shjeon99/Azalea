@@ -194,35 +194,61 @@ static mem_region_t *alloc_mem(int size)
         return ptr ;
 }
 
+
+
+static void merge_mem_region()
+{
+  mem_region_t *ptr ;
+  mem_region_t *next_ptr ;
+  struct list_head *temp, *temp1 ; 
+
+  for ( temp = (&mem_region_list)->next; temp != (&mem_region_list) ; ) 
+  {   
+       temp1 =  temp->next ;
+       if ( temp1 != (&mem_region_list)) 
+        {   
+          ptr = list_entry(temp, mem_region_t, list ) ; 
+          next_ptr = list_entry(temp1, mem_region_t, list ) ; 
+
+         if ( ptr->to == next_ptr->from )
+         {   
+            ptr->to = next_ptr->to ;
+            ptr->size = ptr->to - ptr->from ;
+            list_del(&next_ptr->list) ;
+						vfree(next_ptr) ;
+            continue ; 
+         }   
+        temp = temp->next ;
+        }   
+      else
+          break ;
+  }
+}
+
 static void free_mem(mem_region_t *item)
 {
 
-        mem_region_t *ptr = NULL ;
-       // mem_region_t *prev, *next ;
+	mem_region_t *ptr = NULL ;
+	// mem_region_t *prev, *next ;
 
-        int found = 0 ;
+	int found = 0 ;
 
-        list_for_each_entry(ptr, &mem_region_list, list){
-                if ( ptr -> from > item->from )
-                {
-                        found = 1 ;
-                        break ;
-                }
-        }
+	list_for_each_entry(ptr, &mem_region_list, list)
+	{
+		if ( ptr -> from > item->from )
+			{
+				found = 1 ;
+				break ;
+      }
+	}
 
-        if (!found)
-                list_add_tail(&item->list, &mem_region_list) ;
-        else{
-              // Buggy in merge region. 
-		if ( ptr->from == item->to )
-		{
-			ptr->from = item->from ;
-			ptr->size = ptr->to - ptr->from ;
-             		vfree(item) ;
-                }
-                else
-                        list_add_tail(&item->list, &ptr->list) ;
-		}
+	if (!found)
+		list_add_tail(&item->list, &mem_region_list) ;
+	else
+    list_add_tail(&item->list, &ptr->list) ;
+		
+	merge_mem_region() ;
+
 	return ;
 }
 
