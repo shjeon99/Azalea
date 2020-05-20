@@ -29,7 +29,7 @@
 #define MAX_MEMORY                  (100)
 #define MAX_PAPIC_ID                (600)   // Maximum number of physical cores to wake
 
-#define MASK_SIZE    								((MAX_CORE/sizeof(unsigned long))+1)
+#define MASK_SIZE    								(MAX_CORE/((sizeof(unsigned long))*8)+1)
 
 // Used only start with index
 #define CPUS_PER_NODE               (24)

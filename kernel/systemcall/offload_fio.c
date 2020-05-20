@@ -38,9 +38,9 @@ struct circular_queue *ocq = NULL;
 TCB *current = NULL;
 int mytid = -1;
 
-//#ifdef DEBUG
+#ifdef DEBUG
   lk_print("open system call: path=%s, flags=%d, mode=%d\n", path, oflag, mode);
-//#endif
+#endif
 
   // chech parameter
   if(path == NULL) {
@@ -49,9 +49,9 @@ int mytid = -1;
 
   ch = get_offload_channel(-1);
 
-//#ifdef DEBUG
+#ifdef DEBUG
 	lk_print("channel_no :%d\n", ch) ;
-//#endif
+#endif
 
   //ch = get_offload_channel(1);
   if(ch == NULL) {

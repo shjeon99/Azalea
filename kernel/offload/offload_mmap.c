@@ -16,28 +16,6 @@ QWORD g_io_bitmap ;
 unsigned short local_channels_no[MAX_CORE] ;
 
 /**
- * @brief get io offload channel id
- * @return success offload id, fail (0)
- */
-int get_offload_id(void)
-{
-int current_memory_start = 0;
-int global_memory_start = 0;
-int memory_per_node = 0;
-int offload_id = 0;
-
-/*
-  current_memory_start = *(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET);
-  global_memory_start =  (int) UNIKERNEL_START;
-  memory_per_node =  (int) MEMORYS_PER_NODE;
-
-  offload_id =  (int) ((current_memory_start - global_memory_start) / memory_per_node);
-*/
-
-  return (offload_id);
-}
-
-/**
  * @brief initialize io offload
  * @return success (TRUE), fail (FALSE)
  */
@@ -54,10 +32,7 @@ BOOL init_offload_channel(QWORD *iobitmap)
 	QWORD ocq_base_va = 0;
 	QWORD offload_channel_info_va = 0;
 	QWORD offload_channel_base_va = 0;
-	QWORD *p_node_id = NULL;
 	
-	int i = 0;
-
 	//lk_print("Shared memmory start: %q \n", (QWORD) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30);
 	//lk_print("Shared memmory end  : %q \n", ((QWORD) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30) + 0x40000000);
 	
@@ -107,17 +82,18 @@ BOOL init_offload_channel(QWORD *iobitmap)
   for ( i = 0 ; i < MASK_SIZE ; i ++ )
 	{
 			bitmask = 1 ;
-			for ( j = 0 ; j < sizeof(QWORD)-1 ; j ++ ) 
+			for ( j = 0 ; j < (sizeof(QWORD)*8)-1 ; j ++ ) 
 			{
 						if ((iobitmap[i] & bitmask) > 0)
 							{
-									lk_print("channel_no %d\n", local_channel) ; 
 									local_channels_no[index++] = local_channel ;
 						  }
 						local_channel ++ ; 
 						bitmask = (bitmask << 1) ;
 			}
 	}
+	lk_print("offload channel cnt : %d\n", index) ;
+
   g_channel_size = index ;
 
 	for ( i = 0 ; i < g_channel_size ; i ++ ){

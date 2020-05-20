@@ -160,7 +160,7 @@ static unsigned short g_total = 0;
 static unsigned short g_kernel32 = 0;
 static int ukid = -1;
 
-static unsigned int start_index, core_start, core_end;
+static unsigned int core_start ;
 static unsigned long memory_start, memory_end;
 static unsigned long memory_start_addr, memory_shared_addr;
 
@@ -395,7 +395,9 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		get_io_bitmask(ukid, &cpumask) ;
 
     for ( i  = 0 ; i < MASK_SIZE ; i ++ )
+			{
     	*((unsigned long *) (bladdr + META_OFFSET + OFFLOAD_BITMAP_OFFSET+i*sizeof(unsigned long))) = cpumask.bits[i] ;
+			}	
 		}
 
 #if 0
@@ -472,22 +474,30 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		getUnikernelCPUInfo(id, &cnt);
 		getUnikernelCPUList(id, corelist) ;
 
-		printk(KERN_INFO "WAKE: %d %d %d\n", id, ukid, cnt ) ;
-
 		for ( i = 0 ; i < cnt ; i ++ )
 		{
-				printk(KERN_INFO "wake apicid : %d\n" , corelist[i]) ;
 				wakeup_secondary_cpu_via_init(corelist[i], g_boot_addr) ;
 		}
 	}
 		break ;
 	
   case CPU_ALL_OFF:
-		{	
-			unsigned int id ;
-			retu = copy_from_user(&id, (const void __user *) arg, sizeof(unsigned int)) ;
-		}		
+	{	
+		unsigned int id ;
+		int cnt ;
+		int corelist[MAX_CORE] ;
+		retu = copy_from_user(&id, (const void __user *) arg, sizeof(unsigned int)) ;
+		
+		getUnikernelCPUInfo(id, &cnt) ;
+		getUnikernelCPUList(id, corelist) ;
+
+		for ( i = 0 ; i < cnt ; i ++ )
+		{
+	  	apic_send_ipi(0x00, corelist[i], 49) ;
+		} 	
+	}		
 		break ;
+
   case IO_REMAP:
   {
     struct addr_info {

@@ -195,8 +195,7 @@ static mem_region_t *alloc_mem(int size)
 }
 
 
-
-static void merge_mem_region()
+static void merge_mem_region(void)
 {
   mem_region_t *ptr ;
   mem_region_t *next_ptr ;
@@ -515,7 +514,6 @@ int get_io_bitmask(int ukid, a_cpumask_t *bitmap)
 			index = (i) / ((sizeof(unsigned long))*8) ;
 			bits =  (i) % ((sizeof(unsigned long))*8) ;
 
-			printk(KERN_INFO "logical NO %d ( %d, %d )\n", i, index, bits)  ;
 			mask.bits[index] |= ((unsigned long)1 << (bits)) ; 
 		}
 
