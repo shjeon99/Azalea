@@ -12,6 +12,7 @@
 #include "offload_memory_config.h"
 #include "offload_fio.h"
 #include "offload_network.h"
+#include "offload_cmd.h"
 #include "systemcalllist.h"
 #include "offload_thread_pool.h"
 

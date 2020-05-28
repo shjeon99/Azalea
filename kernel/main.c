@@ -166,8 +166,8 @@ void Main(int boot_mode)
   lk_print_xy(xloc, yloc++, "Pass");
 
 #ifdef	OFFLOAD_ENABLE
-// if(init_console_channel() == TRUE) {
-	if (FALSE) {  
+ if(init_console_channel() == TRUE) {
+//	if (FALSE) {  
     cs_boot_msg_print(yloc);
 
     lk_print_xy(0, yloc++, "Init Console ................................[Pass]");

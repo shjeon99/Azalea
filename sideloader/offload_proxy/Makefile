@@ -16,7 +16,7 @@ CFLAGS = -Wall -D_GNU_SOURCE -O0 -g
 CC = gcc
 offload_local_proxy: offload_local_proxy.c
 
-	$(CC) $(CFLAGS) $(INCS) $< offload_channel.o offload_mmap.o offload_message.o offload_fio.o offload_network.o offload_thread_pool.o -lpthread -o $@
+	$(CC) $(CFLAGS) $(INCS) $< offload_channel.o offload_mmap.o offload_message.o offload_fio.o offload_network.o offload_thread_pool.o offload_cmd.o -lpthread -o $@
 
 prepare:
 	$(CC) $(CFLAGS) $(INCS) offload_channel.c -o offload_channel.o -c
@@ -25,6 +25,8 @@ prepare:
 	$(CC) $(CFLAGS) $(INCS) offload_fio.c -o offload_fio.o -c
 	$(CC) $(CFLAGS) $(INCS) offload_network.c -o offload_network.o -c
 	$(CC) $(CFLAGS) $(INCS) offload_thread_pool.c -o offload_thread_pool.o -c
+	$(CC) $(CFLAGS) $(INCS) offload_cmd.c -o offload_cmd.o -c
+
 
 all: prepare offload_local_proxy
 
