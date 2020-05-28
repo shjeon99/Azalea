@@ -9,7 +9,7 @@ rmmod lk.ko
 FILE=./apic.dat
 
 #mem_start=`cat /sys/firmware/memmap/\`ls -1 /sys/firmware/memmap | sort  -g | tail -n 1\`/start`
-mem_start=0xa00000000
+mem_start=`head -n 1 /proc/meminfo | awk '{print $2}' | awk '{num=strtonum($1); num=rshift(num,20)+2; num=lshift(num,30); printf "0x%x",num}'`
 mem_end=`cat /sys/firmware/memmap/\`ls -1 /sys/firmware/memmap | sort  -g | tail -n 1\`/end`
 #echo $mem_start $mem_end
 cat /sys/firmware/acpi/tables/APIC > apic.dat
