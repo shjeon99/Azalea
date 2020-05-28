@@ -800,3 +800,40 @@ void sys3_off_rewinddir(job_args_t *job_args)
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) 0);
   pthread_mutex_unlock(&ch->mutex);
 }
+
+void cmd_off_stop(job_args_t *job_args)
+{
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  int iret = -1;
+
+  char *command = NULL;;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  command = (char *) get_va(in_pkt->param1);
+
+  // execute unlink
+  iret = system(command);
+
+  // check error
+  if(iret == -1)
+    fprintf(stderr, "FIO SYSTEM: %s, %s\n", strerror(errno), command);
+
+#if 0  // do not return
+  // retrun ret
+  pthread_mutex_lock(&ch->mutex);
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
+#endif
+}

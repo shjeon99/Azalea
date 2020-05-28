@@ -74,4 +74,8 @@
 #define SYSCALL_sys3_rewinddir          908
 
 #define SYSCALL_print_log               854
+
+
+#define CMD_DEBUG											9000
+#define CMD_EXCEPTION									9001
 #endif // __SYSTEMCALLLIST_H__

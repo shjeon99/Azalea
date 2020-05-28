@@ -142,12 +142,34 @@ static ssize_t unikernel_ids_show(struct kobject *kobj, struct kobj_attribute *a
 static ssize_t unikernel_cpu_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf) 
 {
 		int ret =  0;
+	  int id = -1 ;
+		int i ;
+
+		ret = kstrtou32(kobj->name, 10, &id) ;
+    if ( ret != 0 )
+				return 0 ;
+
+		for ( i = 0 ; i < az_info.unikernels[id].nr_cpus ; i ++ )
+			{
+				ret += sprintf(buf+ret, "%3d ", az_info.unikernels[id].cpulist.apicid[i]) ;
+			}
+
 		return ret ;
 }
 
 static ssize_t unikernel_mem_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-		int ret = 0 ;
+		int ret = 0;
+		int id = -1 ;
+		int i ;
+
+		ret = kstrtou32(kobj->name, 10, &id ) ;
+	
+  	if ( ret != 0 ) return 0 ;
+		
+		ret += sprintf(buf+ret, "%3d ", (az_info.unikernels[id].meminfo)->from ) ;
+		ret += sprintf(buf+ret, "%3d ", (az_info.unikernels[id].meminfo)->to ) ;
+
 		return ret ;
 } 
 
@@ -221,16 +243,6 @@ int sysfs_azalea_init(void)
 {
   int ret = 0 ; 
  
-/* 
-  az_info.azalea_kobj = kzalloc(sizeof(*azalea_kobj), GFP_KERNEL) ;
-
-  if (!azalea_kobj)
-  {
-    printk("%s: kzalloc() failed\n", __func__) ;
-    return -1 ;
-  }
-*/
-
   az_info.azalea_kobj  = kobject_create_and_add("azalea", NULL) ;
 	if ( ! az_info.azalea_kobj )
 			return -ENOMEM ;
@@ -240,14 +252,6 @@ int sysfs_azalea_init(void)
 	if (ret)
 		kobject_put(az_info.azalea_kobj) ;
 	
-/*
-  ret = sysfs_create_file(az_info.azalea_kobj, &azalea_meminfo.attr) ;
-  ret = sysfs_create_file(az_info.azalea_kobj, &azalea_cpuinfo.attr) ;
-  ret = sysfs_create_file(az_info.azalea_kobj, &azalea_available_cpu.attr) ;
-  ret = sysfs_create_file(az_info.azalea_kobj, &azalea_available_mem.attr) ;
-	ret = sysfs_create_file(az_info.azalea_kobj, &unikernel_ids.attr) ;
-*/
-
   return ret ;
 }
 
