@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <dirent.h>
 
 #include "offload_channel.h"
@@ -15,29 +16,27 @@
 #include "offload_mmap.h"
 #include "offload_thread_pool.h"
 
+#include "../lk/lkernel.h" 
+
 void cmd_off_stop(job_args_t *job_args)
 {
 	char command[255]  ;
-	char *msg ;
-
+	char *msg = NULL ;
+	int fd = -1 ;
   //struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
-
   int iret = -1;
 
-  //char *command = NULL;;
-
-  //int tid = 0;
-  //int  offload_function_type = 0;
-
-  //struct channel_struct *ch;
-//  ch = job_args->ch;
-//  out_cq = job_args->ch->out_cq;
   in_pkt = (io_packet_t *) &job_args->pkt;
 
-//  tid = (int) in_pkt->tid;
-//  offload_function_type = (int) in_pkt->io_function_type;
+  fd = open("/dev/lk", O_RDWR);
+  if (fd < 0) {
+    return ;
+  }
 
+	iret = ioctl(fd, CPU_ALL_OFF, in_pkt->param1) ;
+
+#if 0
 	sprintf(command, "STOP %ld", in_pkt->param1);
 	printf("================ %s ================", command ) ;
   msg = (char *) get_va(in_pkt->param2);
@@ -45,10 +44,13 @@ void cmd_off_stop(job_args_t *job_args)
 
   // execute unlink
   iret = system(command);
+#endif
 
   // check error
   if(iret == -1)
     fprintf(stderr, "FIO SYSTEM: %s, %s\n", strerror(errno), command);
+
+	close(fd) ;
 
 #if 0  // do not return
   // retrun ret
