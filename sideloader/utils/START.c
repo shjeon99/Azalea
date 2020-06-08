@@ -210,7 +210,7 @@ int main(int argc, char **argv )
   print_kmsg(fd_lk, kmsg);
 
 
-	ret = ioctl(fd_lk, CPU_ALL_ON , ukid);
+	ret = ioctl(fd_lk, CPU_ALL_ON , &ukid);
   if (ret < 0) {
 		 print_kmsg(fd_lk, "wake: Wake unikernel %d failed\n");
      close(fd_lk);
@@ -219,6 +219,8 @@ int main(int argc, char **argv )
   }
   close(fd_lk);
   free(buf);
+
+  sleep(1) ;
 
   return 0;
 }

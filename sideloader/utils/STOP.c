@@ -40,7 +40,7 @@ int main(int argc, char **argv )
   }
 
   // AZ_PARAM - send parameters to the kernel
-  ret = ioctl(fd_lk, CPU_ALL_OFF, id);
+  ret = ioctl(fd_lk, CPU_ALL_OFF, &id);
   if (ret < 0) {
 		printf("STOP: fail to turn off cores (unikernel id : %d)\n", id) ; 
     close(fd_lk);

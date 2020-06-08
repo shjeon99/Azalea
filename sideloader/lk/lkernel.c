@@ -492,11 +492,16 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	{
 		int cnt ;
 		int corelist[MAX_CORE] ;
-		unsigned int id ;
-		retu = copy_from_user(&id, (const void __user *) arg, sizeof(unsigned int)) ;
+		int id ;
+		retu = copy_from_user(&id, (const void __user *) arg, sizeof(int)) ;
 
-		getUnikernelCPUInfo(id, &cnt);
+		if ( getUnikernelCPUInfo(id, &cnt) == -1 )
+		{
+			printk(KERN_INFO "Unikernel %d doesn't exist, wake failed", id) ;
+			return -1 ;
+		}
 		getUnikernelCPUList(id, corelist) ;
+		printk(KERN_INFO "Unikernel start %d", id) ;
 
 		for ( i = 0 ; i < cnt ; i ++ )
 		{
@@ -507,13 +512,19 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	
   case CPU_ALL_OFF:
 	{	
-		unsigned int id ;
+		int id ;
 		int cnt ;
 		int corelist[MAX_CORE] ;
-		retu = copy_from_user(&id, (const void __user *) arg, sizeof(unsigned int)) ;
+		retu = copy_from_user(&id, (const void __user *) arg, sizeof(int)) ;
 		
-		getUnikernelCPUInfo(id, &cnt) ;
+		if ( getUnikernelCPUInfo(id, &cnt) == -1 ) 
+		{
+			printk(KERN_INFO "Unikernel %d doesn't exist, shutdown failed\n", id) ;
+			break ;
+		}
 		getUnikernelCPUList(id, corelist) ;
+
+		printk(KERN_INFO "Unikernel shutdown %d", id) ;
 
 		for ( i = 0 ; i < cnt ; i ++ )
 		{

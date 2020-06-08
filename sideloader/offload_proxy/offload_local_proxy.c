@@ -60,6 +60,8 @@ thread_pool_t *g_pool[OFFLOAD_MAX_CHANNEL];
 
 unsigned long mem_start = 0, mem_end = 0 ;
 
+unsigned int program_exit = 0 ;
+
 /**
  * @brief memcpy by sizeof(unsigned long) 
  * @param destination, source, size 
@@ -375,26 +377,90 @@ int main(int argc, char *argv[])
   int i = 0;
   unsigned long status;
   pthread_t *threads_offload_watch;
-	FILE *fp = NULL ;
+  int opt ;
+  int daemonize = 0 ;
+  int valid_param = 0 ;
+
+  FILE *fp = NULL ;
 
   unsigned long unikernels_mem_size = 0;
 
+#if 0
   if (argc != 9) {
     printf("usage: ./offload_local_proxy -o <no elements> -i <no elements> -c"
 	   " <no total cores> -n <no nodes>\n");
     exit(1);
   }
+#endif
 
+  while((opt = getopt(argc, argv, "o:i:c:n:D")) != -1)
+  {
+	switch(opt)
+	{
+		case 'o':
+			ocq_elements = atol(optarg) ;
+			valid_param ++ ;	
+			break;
+		case 'i':
+			icq_elements = atol(optarg) ;
+			valid_param++ ;
+			break;
+		case 'c':
+			g_n_channels_per_node = atoi(optarg) ;
+			valid_param ++ ;
+			break;
+		case 'n':
+			g_n_nodes = atoi(optarg) ;
+			valid_param ++ ;
+			break;
+		case 'D':
+			daemonize = 1 ;	
+			break;
+		default:
+			 printf("usage: ./offload_local_proxy -o <no elements> -i <no elements> -c"
+           " <no total cores> -n <no nodes>\n");
+    			exit(1);
+	}
+  }
+
+  if ( valid_param != 4 )
+  {
+	printf("usage: ./offload_local_proxy -o <no elements> -i <no elements> -c"
+           " <no total cores> -n <no nodes>\n");
+        exit(1);
+  } 
+
+/*
   ocq_elements = atol(argv[2]);
   icq_elements = atol(argv[4]);
+*/
   opages = ocq_elements * CQ_ELE_PAGE_NUM + 1; // payload = CQ_ELE_PAGE_NUM pages, metadata = 1 page
   ipages = icq_elements * CQ_ELE_PAGE_NUM + 1;
 
+/*
   g_n_channels_per_node = atoi(argv[6]);
-
   g_n_nodes = atoi(argv[8]);
+*/
 
   g_n_channels = g_n_channels_per_node * g_n_nodes;
+
+
+ if ( daemonize )
+ {
+#if 0  
+  if ( (pid = fork()) < 0)
+  	exit(-1) ;
+  else if ( pid != 0 )
+	exit(0) ;
+
+  signal(SIGHUP, SIG_IGN) ;
+  close(0) ;
+  close(1) ;
+  close(2) ;
+
+  setsid() ;
+#endif
+ }
 
   fp = fopen("/sys/azalea/meminfo", "r") ;
   if ( fp == NULL ) 
@@ -404,7 +470,7 @@ int main(int argc, char *argv[])
 	}
  
   fscanf(fp, "%ld %ld", &mem_start, &mem_end ) ;
-	fclose(fp) ;
+  fclose(fp) ;
 
   unikernels_mem_size = mmap_unikernels_memory();
 
@@ -466,8 +532,16 @@ int main(int argc, char *argv[])
 
 #endif
 
+  if ( daemonize )
+  {
+	while ( !program_exit )
+	{
+		sleep(1) ;
+	}
+  }
+  else 
   // begin of logic
-  cmd(offload_channels);
+  	cmd(offload_channels);
 
 #ifdef MULTI_WATCH
   for (i = 0; i < g_n_nodes; i++) { // 1 for watch
