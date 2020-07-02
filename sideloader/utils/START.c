@@ -48,8 +48,10 @@ int main(int argc, char **argv )
 
   char filename[255] ;
 
-  unsigned short param[CONFIG_PARAM_NUM] = {0, };
+  unikernel_param_t parm ;
+  //unsigned short param[CONFIG_PARAM_NUM] = {0, };
   unsigned int filesize = 0, readbytes  = 0;
+  
   int i = 0;
 
 	int ukid = -1 ;
@@ -59,6 +61,7 @@ int main(int argc, char **argv )
 
   unsigned long memory_start_addr = 0;
 
+  char *full_filename ;
   int opt ;
   char c ;
 
@@ -93,8 +96,20 @@ int main(int argc, char **argv )
 			return -1 ;
   }
 
-  param[PARM_CPU] = cores ;
-  param[PARM_MEM] = mem ;
+  full_filename = realpath(filename, NULL) ;
+
+  if ( full_filename == NULL )
+	{
+		  printf("[usage] : START <disk.img> -c [CPU] -m [MEMORY]\n");
+			return -1 ;
+  }
+
+  strncpy( parm.full_filename, full_filename, sizeof(full_filename)+1);
+  
+  free(full_filename) ;
+
+  parm.param[PARM_CPU] = cores ;
+  parm.param[PARM_MEM] = mem ;
 
   // Open image file
   fd = open(filename, O_RDONLY);
@@ -139,8 +154,8 @@ int main(int argc, char **argv )
   g_kernel32 = *((unsigned short *)(buf+TOTAL_COUNT_OFFSET+2)) ;
   g_kernel64 = *((unsigned short *)(buf+TOTAL_COUNT_OFFSET+4)) ;
 
-  param[PARM_IMAGE] = g_total;
-  param[PARM_KERN32] = g_kernel32;
+  parm.param[PARM_IMAGE] = g_total;
+  parm.param[PARM_KERN32] = g_kernel32;
 
   sprintf(kmsg, "START: total: %d [bootloader:%d / kernel64:%d / uthread:%d]\n",
            g_total, g_kernel32, g_kernel64, g_total - g_kernel32 - g_kernel64);
@@ -148,7 +163,7 @@ int main(int argc, char **argv )
 
 
   // AZ_PARAM - send parameters to the kernel
-  ukid = ioctl(fd_lk, AZ_PARAM, param);
+  ukid = ioctl(fd_lk, AZ_PARAM, &parm);
   if (ukid < 0) {
     print_kmsg(fd_lk, "START: Sending parameters failed.\n");
     close(fd_lk);

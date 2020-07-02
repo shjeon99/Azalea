@@ -4,11 +4,18 @@
 #define PAGE_4K             (0x1000)
 
 #define CONFIG_PARAM_NUM    4
-#define PARM_CPU	0
-#define PARM_MEM 	1
+#define PARM_CPU			0
+#define PARM_MEM 			1
 #define PARM_IMAGE  	2
 #define PARM_KERN32 	3 
- 
+
+#define MAX_PATH  256	
+
+typedef struct unikernel_param {
+			unsigned short param[CONFIG_PARAM_NUM] ;
+			char full_filename[MAX_PATH] ;
+} unikernel_param_t ;
+	 
 #define SECTOR				512
 
 #define AZ_PARAM            10

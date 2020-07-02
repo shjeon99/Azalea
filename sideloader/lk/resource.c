@@ -11,14 +11,9 @@
 #include <linux/sysfs.h>
 #include <linux/slab.h>
 
-
 #include "arch.h"
 
-#if 0
-char cpu[]="0,4,32,36,64,68,96,100,128,132,160,164,224,228,256,260,288,292,8,12,40,44,72,76,104,108,136,140,168,172,200,204,232,236,264,268,48,52,80,84,112,116,144,148,176,180,192,196,208,212,240,244,272,276,24,28,56,60,88,92,120,124,152,156,184,188,216,220,248,252,280,284," ;
-char mem[]="0x100000000,0x343fffffff" ;
-#endif
-
+#define MAX_PATH  256
 typedef enum {FALSE = 0, TRUE} boolean;
 
 //#define MASK_SIZE    ( (MAX_CORE/sizeof(unsigned long))+1)
@@ -49,6 +44,7 @@ struct unikernel_info {
 	mem_region_t *meminfo ;
 	unsigned short nr_cpus ;
 	struct a_cpulist cpulist ;
+	char filename[MAX_PATH] ;
   struct kobject *unikernel_kobj ; 
 } ;
 
@@ -170,7 +166,21 @@ static ssize_t unikernel_mem_show(struct kobject *kobj, struct kobj_attribute *a
 		ret += sprintf(buf+ret, "%3d ", (az_info.unikernels[id].meminfo)->to ) ;
 
 		return ret ;
-} 
+}
+
+static ssize_t unikernel_info_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+		int ret = 0 ;
+	 	int id = -1 ;
+
+		ret = kstrtou32(kobj->name, 10, &id) ;
+	
+		if (ret != 0 ) return 0 ;
+
+		ret += sprintf(buf+ret, "%s", az_info.unikernels[id].filename ) ;
+
+		return ret ;
+}
 
 static struct kobj_attribute azalea_meminfo =__ATTR(meminfo, 0444, meminfo_show, NULL );
 static struct kobj_attribute azalea_cpuinfo =__ATTR(cpuinfo, 0444, cpuinfo_show, NULL );
@@ -179,6 +189,7 @@ static struct kobj_attribute azalea_available_mem =__ATTR(available_mem, 0444, a
 
 static struct kobj_attribute unikernel_meminfo =__ATTR(cpuinfo, 0444, unikernel_cpu_show, NULL );
 static struct kobj_attribute unikernel_cpuinfo =__ATTR(meminfo, 0444, unikernel_mem_show, NULL );
+static struct kobj_attribute unikernel_info		 =__ATTR(info, 0x444, unikernel_info_show, NULL) ;
 
 static struct attribute *azalea_attrs[] = {
 			&azalea_meminfo.attr,
@@ -195,6 +206,7 @@ static struct attribute_group azalea_attr_group = {
 static struct attribute *unikernel_attrs[] = {
 			&unikernel_meminfo.attr,
 			&unikernel_cpuinfo.attr,
+			&unikernel_info.attr,
 			NULL,
 };
 
@@ -533,7 +545,7 @@ int print_available_cpus(void)
 	return 0 ;
 }
 
-int alloc_unikernel(int core, int mem)
+int alloc_unikernel(int core, int mem, char *filename )
 {
 	int i ;
 	int nr_cpu = core, sz_mem = mem ;
@@ -550,6 +562,7 @@ int alloc_unikernel(int core, int mem)
 			
 			az_info.unikernels[i].avail = FALSE ;
 			az_info.unikernels[i].id = i ;
+			strncpy(az_info.unikernels[i].filename, filename, strlen(filename)+1) ;
 
 			sysfs_add_unikernel(i) ;
 			return i ;

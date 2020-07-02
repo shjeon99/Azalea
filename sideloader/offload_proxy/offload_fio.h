@@ -23,4 +23,5 @@ void sys3_off_readdir(job_args_t *job_args);
 void sys3_off_rewinddir(job_args_t *job_args);
 void sys3_off_opendir2(job_args_t *job_args);
 
+void sys_off_usystem(job_args_t *job_args);
 #endif /*__OFFLOAD_IO_H__*/

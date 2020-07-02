@@ -15,7 +15,7 @@ extern void print_unikernel_info(void) ;
 extern int get_io_bitmask(int ukid, a_cpumask_t *bitmap) ;
 
 extern int free_unikernel(int id) ;
-extern int alloc_unikernel(int core, int mem) ;
+extern int alloc_unikernel(int core, int mem, char *filename) ;
 
 extern void print_unikernel_info(void) ;
 extern int print_available_cpus(void) ;

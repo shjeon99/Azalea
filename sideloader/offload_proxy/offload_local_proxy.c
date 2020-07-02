@@ -172,6 +172,9 @@ job_args_t *job_args = NULL;
 		case SYSCALL_sys_exit:
 			 //sys_off_exit(job_args);
 	     break;
+		case SYSCALL_sys_usystem:
+			 sys_off_usystem(job_args) ;
+			 break;
 		case CMD_DEBUG:
 			 cmd_off_stop(job_args) ;
 			 break;

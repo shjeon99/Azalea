@@ -394,6 +394,9 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
   case SYSCALL_sys3_rewinddir:
     sys3_off_rewinddir((DIR *)param1);
     break;
+	case SYSCALL_sys_usystem:
+		ret_code = (QWORD) sys_off_usystem((char*)param1);
+		break;
   default:
     printk("Invalid system calls");
     debug_halt((char *) __func__, no);

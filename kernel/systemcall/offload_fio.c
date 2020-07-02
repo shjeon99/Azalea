@@ -18,7 +18,7 @@
 //#define DEBUG
 
 extern QWORD g_memory_start;
-
+extern int g_ukid; 
 
 /** 
  * @brief file open system call
@@ -453,6 +453,44 @@ int sys3_off_system(char *command)
   return iret;
 }
 
+/**
+ * @brief usystem system call : launch a new unikernel
+ * @param command
+ * return success ( thre return status of the command), fail (-1) 
+ */
+
+int sys_off_usystem(char *command)
+{
+
+  int iret = -1;
+
+  channel_t *ch = NULL;
+  struct circular_queue *icq = NULL;
+  struct circular_queue *ocq = NULL;
+
+  TCB *current = NULL;
+  int mytid = -1;
+
+  // check parameter
+  if(command == NULL)
+    return (-1);
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL)
+    return (-1);
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current();
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys_usystem, g_ukid, get_pa((QWORD) command), 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_usystem);
+
+  return iret;
+
+}
 /**
  * @brief file chdir system call : change working directory
  * @param path for directory

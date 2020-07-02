@@ -185,4 +185,5 @@ int sys3_closedir(DIR *dirp);
 struct dirent *sys3_readdir(DIR *dirp);
 void sys3_rewinddir(DIR *dirp);
 
+int sys_usystem(char *command) ;
 #endif  /* __SYSCALL_H__ */

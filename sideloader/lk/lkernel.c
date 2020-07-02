@@ -237,10 +237,10 @@ int free_ukid(int loc)
  * @return success (0), fail (-1)
  */
 
-int init_unikernel_resources(const unsigned short *g_param)
+int init_unikernel_resources(unikernel_param_t *g_param)
 {
 	
-	ukid = alloc_unikernel(g_param[PARM_CPU], g_param[PARM_MEM]) ;
+	ukid = alloc_unikernel(g_param->param[PARM_CPU], g_param->param[PARM_MEM], g_param->full_filename) ;
 	if ( ukid == -1 ) {
 		printk(KERN_INFO "AZ_PARAM: unikernel id is not allocated\n");
 		return -1;
@@ -279,14 +279,15 @@ int init_unikernel_resources(const unsigned short *g_param)
   memory_shared_addr = ((unsigned long) ( mem_s-SHARED_MEMORY_SIZE)) << 30;
   }
 
-  g_total = g_param[PARM_IMAGE];
-  g_kernel32 = g_param[PARM_KERN32];
+  g_total = g_param->param[PARM_IMAGE];
+  g_kernel32 = g_param->param[PARM_KERN32];
 
   printk(KERN_INFO "AZ_PARAM: Unikernel ID: %d\n", ukid);
   printk(KERN_INFO "AZ_PARAM: core_num: %d, memory_start: %d, memory_end: %d\n",
          (int)core_start, (int)memory_start, (int)memory_end);
   printk(KERN_INFO "AZ_PARAM: memory_start_addr: %lx\n", (unsigned long) memory_start_addr);
   printk(KERN_INFO "AZ_PARAM: g_total: %d, g_kernel32: %d\n", (int) g_total, (int) g_kernel32);
+  printk(KERN_INFO "AZ_PARAM: filename : %s\n", g_param->full_filename ) ;
 
   return ukid ;
 }
@@ -309,17 +310,16 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
   switch (cmd) {
   case AZ_PARAM:  // Send parameters to resource manager
   {
-    unsigned short g_param[CONFIG_PARAM_NUM] = {0, };
-
+    unikernel_param_t g_param ;
     // Initialize resource info.
-    retu = copy_from_user(g_param, (const void __user *) arg, sizeof(unsigned short)*(CONFIG_PARAM_NUM));
+    retu = copy_from_user(&g_param, (const void __user *) arg, sizeof(unikernel_param_t));
     if (retu) {
       printk(KERN_INFO "AZ_PARAM: copy_from_user failed\n");
       return -1;
     }
 
    // Initialize resources for unikenel
-    init_unikernel_resources(g_param);
+    ukid = init_unikernel_resources(&g_param);
 
 		return ukid ;
 

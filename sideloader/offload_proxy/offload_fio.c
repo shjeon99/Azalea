@@ -601,6 +601,135 @@ void sys3_off_system(job_args_t *job_args)
   pthread_mutex_unlock(&ch->mutex);
 }
 
+char *make_command( int ukid, char *command_string)
+{
+  #define MAX_ARGS  10
+  #define MAX_PATH  255
+
+  int ac = 0 ;
+  char *av[MAX_ARGS] ;
+  char filename[MAX_PATH] ;
+  char *full_filename = NULL ;
+  char cmdline[MAX_PATH] ;
+  char *cmd = NULL ;
+
+  int opt, cores = 0, mem = 0, ret = 0 ;
+  FILE *fp = NULL ;
+
+  sprintf(cmdline, "START %s", command_string) ;
+
+  char *p2 = strtok(cmdline, " ") ;
+
+  while ( p2 && ac < MAX_ARGS - 1 )
+  {
+      av[ac++] = p2 ;
+      p2 = strtok(NULL , " ") ;
+
+  }
+
+ while((opt = getopt(ac, av, "c:m:")) != -1)
+    {
+        switch(opt)
+        {
+            case 'c':
+                cores = atoi(optarg) ;
+                break;
+            case 'm':
+                mem = atoi(optarg) ;
+                break;
+            default:
+                return NULL ;
+      }
+    }
+
+ if ( (optind+1) == ac )
+  {
+      full_filename = realpath(av[optind++], NULL) ;
+  }
+ else
+  {
+      sprintf(filename, "/sys/azalea/%d/info", ukid) ;
+
+      fp = fopen(filename, "rt" ) ;
+      if ( fp == NULL )
+          return NULL ;
+
+      full_filename = malloc(MAX_PATH) ;
+      if (full_filename == NULL ) return NULL ;
+      fgets(full_filename, MAX_PATH, fp) ;
+      strtok(full_filename,"\n") ;
+
+  }
+
+  if (full_filename == NULL ) return NULL ;
+
+  cmd = malloc(MAX_PATH) ;
+  if ( cmd == NULL ) {
+      free(full_filename) ;
+      return NULL ;
+  }
+
+  ret = sprintf(cmd,"START %s", full_filename ) ;
+
+  free(full_filename) ;
+
+  if ( cores != 0 )
+    ret += sprintf(cmd+ret, " -c %d", cores ) ;
+  if ( mem != 0 )
+    ret += sprintf(cmd+ret, " -m %d", mem ) ;
+
+  return cmd;
+}
+
+void sys_off_usystem(job_args_t *job_args)
+{
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  int iret = -1;
+	int ukid = -1 ;
+
+  char *input = NULL;
+	char *command = NULL ;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+	ukid = (int)in_pkt->param1 ; 
+  input = (char *) get_va(in_pkt->param2);
+   
+	command = make_command(ukid, input) ;
+
+	if ( command == NULL )
+	{	
+		iret = -1 ;
+    fprintf(stderr, "FIO SYSTEM: %s\n", input);
+	}
+	else
+	{
+  	// execute 
+  	iret = system(command);
+		free(command) ;
+	}
+
+  // check error
+  if(iret == -1)
+    fprintf(stderr, "FIO SYSTEM: %s, %s\n", strerror(errno), command);
+
+  // retrun ret
+  pthread_mutex_lock(&ch->mutex);
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
+}
+
 /**
  * @brief execute chdir system call
  * @param channel 
