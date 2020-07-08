@@ -23,4 +23,6 @@ struct dirent *sys3_off_readdir(DIR *dirp);
 void sys3_off_rewinddir(DIR *dirp);
 DIR *sys3_off_opendir2(const char *name, DIR **pdir);
 
+int sys_off_usystem(char *command);
+
 #endif /*__OFFLOAD_FIO_H__*/

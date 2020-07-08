@@ -14,23 +14,15 @@ static int g_console_id = 0;
 BOOL g_console_proxy_flag = FALSE;
 volatile QWORD *g_console_magic = NULL;
 
+extern int g_ukid;
+
 /**
  * @brief get console id 
  * @return console id
  */
 int get_console_id(void) 
 {
-int current_memory_start = 0;
-int global_memory_start = 0;
-int memory_per_node = 0;
-int console_id = 0;
-
-  current_memory_start = *(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET);
-  global_memory_start =  (int) UNIKERNEL_START;
-  memory_per_node =  (int) MEMORYS_PER_NODE;
-  console_id =  (int) ((current_memory_start - global_memory_start) / memory_per_node);
-
-  return (console_id);
+  return (g_ukid);
 }
 
 

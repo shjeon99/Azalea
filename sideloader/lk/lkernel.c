@@ -12,16 +12,18 @@
 #include <linux/mc146818rtc.h>
 #include <linux/memblock.h>
 #include <linux/module.h>
+#include<linux/moduleparam.h>
 #include <linux/sched.h>
 #include <linux/timer.h>
 #include <linux/types.h>
 #include <linux/mm.h>
 #include <linux/highmem.h>
 #include <linux/vmalloc.h>
-
 #include "arch.h"
 #include "cmds.h"
 #include "stat.h"
+
+#include "resource.h"
 
 #include "../include/localapic.h"
 #include "../include/page.h"
@@ -53,6 +55,11 @@ static int lk_release(struct inode *inode, struct file *filep);
 static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 static int lk_mmap(struct file *filp, struct vm_area_struct *vma);
 
+static char *cpuinfo ;
+module_param(cpuinfo, charp, 0000);
+static char *meminfo ;
+module_param(meminfo, charp, 0000);
+
 static const struct file_operations lk_fops = {
   .open = lk_open,
   .release = lk_release,
@@ -71,13 +78,30 @@ static int lk_open(struct inode *inode, struct file *filp)
 /**
  * send APIC IPI
  */
+
 static int apic_send_ipi(unsigned int dest_shorthand, unsigned int dest, int vector)
 {
   unsigned send_status = 0, accept_status = 0;
 
   printk(KERN_DEBUG "send_ipi (%d)\n", dest);
 
-  x2apic_write32(APIC_REGISTER_ICR_LOWER, (APIC_TRIGGER_MODE_EDGE | APIC_LEVEL_ASSERT |
+  apic_icr_write((APIC_TRIGGER_MODE_EDGE | APIC_LEVEL_ASSERT |
+                 APIC_DESTINATION_MODE_PHYSICAL | APIC_DELIVERY_MODE_FIXED |
+                 49), dest);
+
+	mdelay(10) ;
+	send_status = safe_apic_wait_icr_idle();
+  accept_status = (apic_read(APIC_ESR) & 0xEF);
+
+
+   if (send_status)
+     printk(KERN_INFO "APIC never delievered\n");
+   if (accept_status)
+     printk(KERN_INFO "APIC delivery error (%x)\n", accept_status);
+/*
+	x2apic_wrmsr_fence() ;
+
+  x2apic_write(APIC_REGISTER_ICR_LOWER, (APIC_TRIGGER_MODE_EDGE | APIC_LEVEL_ASSERT |
                  APIC_DESTINATION_MODE_PHYSICAL | APIC_DELIVERY_MODE_FIXED |
                  49), dest);
 
@@ -86,12 +110,18 @@ static int apic_send_ipi(unsigned int dest_shorthand, unsigned int dest, int vec
   printk("send %d, accept %d\n", send_status, accept_status);
 
   if (!send_status && !accept_status)
-    pr_debug("ipi send failed (dest : %d), (vector : %d)\n", dest, vector);
+    printk(KERN_INFO "ipi send failed (dest : %d), (vector : %d)\n", dest, vector);
   else
-    pr_debug("ipi send success (dest : %d), (vector : %d)\n", dest, vector);
+    printk(KERN_INFO "ipi send success (dest : %d), (vector : %d)\n", dest, vector);
+*/
+
 
   return 0;
 }
+
+
+
+
 
 /**
  * wake up secondary cpu
@@ -147,17 +177,18 @@ static int wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_ei
 }
 
 //====== RESOURCE MANAGER ======
-static unsigned short g_onoff_bitmap[MAX_PROCESSOR_COUNT];
 
-static unsigned short g_ukid[MAX_UNIKERNEL] = {0, };
+//static unsigned short g_ukid[MAX_UNIKERNEL] = {0, };
 static unsigned short g_total = 0;
 static unsigned short g_kernel32 = 0;
 static int ukid = -1;
 
-static unsigned int start_index, core_start, core_end;
+static unsigned int core_start ;
 static unsigned long memory_start, memory_end;
 static unsigned long memory_start_addr, memory_shared_addr;
 
+
+#if 0
 /**
  * @brief Allocate id for the unikernel (0: usable, 1: used)
  * @param none
@@ -196,6 +227,8 @@ int free_ukid(int loc)
 
   return 0; 
 }
+#endif
+
 
 /**
  * @brief Initialize resources based on input parameter
@@ -203,15 +236,17 @@ int free_ukid(int loc)
  * @param [3]memory_start [4]memory_end [5]g_total [6]g_kernel32
  * @return success (0), fail (-1)
  */
-int init_unikernel_resources(const unsigned short *g_param)
+
+int init_unikernel_resources(unikernel_param_t *g_param)
 {
-  // Allocate ID
-  ukid = alloc_ukid();
-  if (ukid == -1) {
-    printk(KERN_INFO "AZ_PARAM: unikernel id is not allocated\n");
-    return -1;
-  }
- 
+	
+	ukid = alloc_unikernel(g_param->param[PARM_CPU], g_param->param[PARM_MEM], g_param->full_filename) ;
+	if ( ukid == -1 ) {
+		printk(KERN_INFO "AZ_PARAM: unikernel id is not allocated\n");
+		return -1;
+	}
+
+#if 0   
   // Set cpu and memory information based on index
   start_index = g_param[0];
   core_start = g_param[1] == 0 ? CPUS_PER_NODE : g_param[1];
@@ -223,20 +258,35 @@ int init_unikernel_resources(const unsigned short *g_param)
     memory_start = g_param[3];
     memory_end = g_param[4];
   }
+#endif
 
+  { 
+	int mem_s,  mem_e ;
+ 
+  getUnikernelMemInfo(ukid, &mem_s, &mem_e) ;
+	memory_start = mem_s ;
+  memory_end = mem_e ;
+
+  getUnikernelCPUInfo(ukid, &core_start) ;
+	 
   memory_start_addr = memory_start << 30;
-  memory_shared_addr = ((unsigned long) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30;
 
-  g_total = g_param[5];
-  g_kernel32 = g_param[6];
+  getAzaleaMemInfo(&mem_s, &mem_e) ;
+
+  memory_shared_addr = ((unsigned long) ( mem_s-SHARED_MEMORY_SIZE)) << 30;
+  }
+
+  g_total = g_param->param[PARM_IMAGE];
+  g_kernel32 = g_param->param[PARM_KERN32];
 
   printk(KERN_INFO "AZ_PARAM: Unikernel ID: %d\n", ukid);
-  printk(KERN_INFO "AZ_PARAM: index: %d, core_num: %d, memory_start: %d, memory_end: %d\n",
-         (int)start_index, (int)core_start, (int)memory_start, (int)memory_end);
+  printk(KERN_INFO "AZ_PARAM: core_num: %d, memory_start: %d, memory_end: %d\n",
+         (int)core_start, (int)memory_start, (int)memory_end);
   printk(KERN_INFO "AZ_PARAM: memory_start_addr: %lx\n", (unsigned long) memory_start_addr);
   printk(KERN_INFO "AZ_PARAM: g_total: %d, g_kernel32: %d\n", (int) g_total, (int) g_kernel32);
+  printk(KERN_INFO "AZ_PARAM: filename : %s\n", g_param->full_filename ) ;
 
-  return 0;
+  return ukid ;
 }
 //==============================
 
@@ -252,21 +302,23 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
   char *bladdr = NULL, *lkbin = NULL;
   int retu = 0;
+	int i ;
 
   switch (cmd) {
   case AZ_PARAM:  // Send parameters to resource manager
   {
-    unsigned short g_param[CONFIG_PARAM_NUM] = {0, };
-
+    unikernel_param_t g_param ;
     // Initialize resource info.
-    retu = copy_from_user(g_param, (const void __user *) arg, sizeof(unsigned short)*(CONFIG_PARAM_NUM));
+    retu = copy_from_user(&g_param, (const void __user *) arg, sizeof(unikernel_param_t));
     if (retu) {
       printk(KERN_INFO "AZ_PARAM: copy_from_user failed\n");
       return -1;
     }
 
    // Initialize resources for unikenel
-    init_unikernel_resources(g_param);
+    ukid = init_unikernel_resources(&g_param);
+
+		return ukid ;
 
     break;
   }
@@ -320,12 +372,14 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     // Ioremap for log memory
     g_log = ioremap(memory_shared_addr + LOG_START_OFFSET + LOG_LENGTH, LOG_SIZE);
+
     if (g_log == NULL) {
       printk (KERN_INFO "AZ_LOADING: g_log ioremap error\n");
       return -EINVAL;
     }
     memset(g_log, 0, LOG_SIZE);
-    printk (KERN_INFO "AZ_LOADING: g_log ioremap success!!: %lx\n", (unsigned long) g_log);
+    
+		printk (KERN_INFO "AZ_LOADING: g_log ioremap success!!: %lx\n", (unsigned long) g_log);
  
     // 3. Copy bootloader and metadata into memory
     // copy image file into the lkbin variable
@@ -352,11 +406,22 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     *((unsigned long *) (bladdr + META_OFFSET + PML4_OFFSET)) = g_pml_addr;
     *((unsigned long *) (bladdr + META_OFFSET + APIC_OFFSET)) = APIC_DEFAULT_PHYS_BASE;
     *((unsigned long *) (bladdr + META_OFFSET + CPU_START_OFFSET)) = core_start;
-    *((unsigned long *) (bladdr + META_OFFSET + CPU_END_OFFSET)) = core_end;
+    *((unsigned long *) (bladdr + META_OFFSET + SHARED_MEMORY_OFFSET)) = (memory_shared_addr>>30) ;
     *((unsigned long *) (bladdr + META_OFFSET + MEMORY_START_OFFSET)) = memory_start;
     *((unsigned long *) (bladdr + META_OFFSET + MEMORY_END_OFFSET)) = memory_end;
     *((unsigned long *) (bladdr + META_OFFSET + QEMU_OFFSET)) = 0;
 
+    {
+		a_cpumask_t  cpumask ;
+		get_io_bitmask(ukid, &cpumask) ;
+
+    for ( i  = 0 ; i < MASK_SIZE ; i ++ )
+			{
+    	*((unsigned long *) (bladdr + META_OFFSET + OFFLOAD_BITMAP_OFFSET+i*sizeof(unsigned long))) = cpumask.bits[i] ;
+			}	
+		}
+
+#if 0
     // Store basic information of unikernel into the stat memory
     g_stat_addr->ukernel[ukid].used = 1;
     //g_stat_addr->ukernel[ukid].name 
@@ -364,10 +429,12 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     g_stat_addr->ukernel[ukid].mem_start = memory_start;
     g_stat_addr->ukernel[ukid].mem_used = 0;
     //g_stat_addr->ukernel[ukid].start_time = time();
+#endif
 
     vfree(lkbin);
   }
     break;
+
   case AZ_GET_MEM_ADDR:  // Send bootloader addr to the application
   {
     if ((retu = copy_to_user((unsigned long *)arg, (unsigned long *)&memory_start_addr, sizeof(unsigned long))) < 0) {
@@ -378,6 +445,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     printk (KERN_INFO "AZ_GET_BOOT_ADDR: memory_start_addr copied\n");
   }
     break;
+
   case AZ_PRINT_MSG:  // Print kernel message from the application
   {
     char buff[256];
@@ -406,15 +474,63 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     unsigned int phy;
     retu = copy_from_user(&phy, (const void __user *) arg, sizeof(unsigned int));
 
+/*
     if (phy >= MAX_PROCESSOR_COUNT || g_onoff_bitmap[phy] == 0)
       return -1;
     g_onoff_bitmap[phy] = 0;
 
     apic_send_ipi(0x00, phy, 49);
-
+*/
     // TODO: check error code
   }
     break;
+
+  case CPU_ALL_ON:
+	{
+		int cnt ;
+		int corelist[MAX_CORE] ;
+		int id ;
+		retu = copy_from_user(&id, (const void __user *) arg, sizeof(int)) ;
+
+		if ( getUnikernelCPUInfo(id, &cnt) == -1 )
+		{
+			printk(KERN_INFO "Unikernel %d doesn't exist, wake failed", id) ;
+			return -1 ;
+		}
+		getUnikernelCPUList(id, corelist) ;
+		printk(KERN_INFO "Unikernel start %d", id) ;
+
+		for ( i = 0 ; i < cnt ; i ++ )
+		{
+				wakeup_secondary_cpu_via_init(corelist[i], g_boot_addr) ;
+		}
+	}
+		break ;
+	
+  case CPU_ALL_OFF:
+	{	
+		int id ;
+		int cnt ;
+		int corelist[MAX_CORE] ;
+		retu = copy_from_user(&id, (const void __user *) arg, sizeof(int)) ;
+		
+		if ( getUnikernelCPUInfo(id, &cnt) == -1 ) 
+		{
+			printk(KERN_INFO "Unikernel %d doesn't exist, shutdown failed\n", id) ;
+			break ;
+		}
+		getUnikernelCPUList(id, corelist) ;
+
+		printk(KERN_INFO "Unikernel shutdown %d", id) ;
+
+		for ( i = 0 ; i < cnt ; i ++ )
+		{
+	  	apic_send_ipi(0x00, corelist[i], 49) ;
+		} 
+		free_unikernel(id) ;
+	
+	}		
+		break ;
 
   case IO_REMAP:
   {
@@ -674,6 +790,12 @@ static int __init lk_init(void)
   err_dev = device_create(lk_class, NULL, MKDEV(lk_major, 0), NULL, LK_DEVICE_NAME);
 
   printk(KERN_INFO "INIT: register device at major %d\n", lk_major);
+  
+	init_unikernels_info() ;
+  init_meminfo(meminfo) ;
+  init_cpulist(cpuinfo) ;
+
+	sysfs_azalea_init() ;
 
   return 0;
 }
@@ -690,6 +812,8 @@ void lk_exit(void)
   iounmap((void *) g_stat);
   iounmap((void *) g_shell_storage);
   iounmap((void *) g_log);
+
+	sysfs_azalea_exit() ;
 
   device_destroy(lk_class, MKDEV(lk_major, 0));
   class_unregister(lk_class);

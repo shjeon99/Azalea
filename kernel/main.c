@@ -36,21 +36,7 @@ extern int g_ukid;
 extern QWORD g_memory_start;
 extern QWORD g_memory_end;
 extern QWORD g_shared_memory;
-
-inline static void flush_cache(void)
-{
-  asm volatile ("wbinvd" ::: "memory");
-}
-
-void HALT()
-{
-  disable_interrupt();
-  flush_cache() ;
-
-  for (;;) {
-    hlt();
-  }
-}
+extern QWORD g_io_bitmap ;
 
 /**
  * @brief IA-32e mode main
@@ -60,26 +46,28 @@ void Main(int boot_mode)
 {
   int xloc = 46, yloc = 0;
 
-  g_ukid = (*((int*) CONFIG_UKID_ADDR));
-  g_vcon_addr = CONFIG_SHARED_MEMORY + VCON_START_OFFSET + (g_ukid * PAGE_SIZE_4K);
-  g_cpu_start = (*((QWORD*) CONFIG_CPU_START));
-  g_cpu_end = (*((QWORD*) CONFIG_CPU_END));
-  g_cpu_size = g_cpu_start;
-  g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET)) << 30;
-  g_memory_end = (*(QWORD*) (CONFIG_MEM_END + CONFIG_PAGE_OFFSET)) << 30;
-  g_shared_memory = ((QWORD) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30;
-
   if (boot_mode == 0) { // AP mode
     while(g_ap_ready == 0)
       pause();
     main_for_ap();
   }
 
+ 	g_ukid = (*((int*) CONFIG_UKID_ADDR));
+  g_vcon_addr = CONFIG_SHARED_MEMORY + VCON_START_OFFSET + (g_ukid * PAGE_SIZE_4K);
+  g_cpu_start = (*((QWORD*) CONFIG_CPU_START));
+	g_shared_memory = (*((QWORD*) CONFIG_SHARED_MEM)) << 30 ;
+	g_cpu_size = g_cpu_start;
+	g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET)) << 30;
+	g_memory_end = (*(QWORD*) (CONFIG_MEM_END + CONFIG_PAGE_OFFSET)) << 30;
+
+	g_io_bitmap = (QWORD) CONFIG_IO_BITMAP+CONFIG_PAGE_OFFSET ;
+
   kernel_pagetables_init(CONFIG_KERNEL_PAGETABLE_ADDRESS);
 
   lk_print_xy(0, yloc++, "IA-32e C language kernel started.............[Pass]");
   lk_print_xy(0, yloc++, "(ID: %d, VCON: 0x%q)", g_ukid, g_vcon_addr);
   lk_print_xy(0, yloc++, "(CPU_NUM: %d)", g_cpu_start);
+  lk_print_xy(0, yloc++, "(SHARED: %d)", g_shared_memory>>30);
   lk_print_xy(0, yloc++, "(MEMORY_START: %d GB,MEMORY_END: %d GB)", g_memory_start>>30, g_memory_end>>30);
   lk_print_xy(0, yloc++, "Init Kernel Page Tables .....................[Pass]");
   store_init_stat(INIT_IA32E_START_STAT);
@@ -173,13 +161,13 @@ void Main(int boot_mode)
   signal_init();
   lk_print_xy(xloc, yloc++, "Pass");
 
-  lk_print_xy(0, yloc, "Remove low identical mapping.................[    ]");
+ lk_print_xy(0, yloc, "Remove low identical mapping.................[    ]");
   remove_low_identical_mapping(CONFIG_KERNEL_PAGETABLE_ADDRESS);
   lk_print_xy(xloc, yloc++, "Pass");
 
 #ifdef	OFFLOAD_ENABLE
-  // init offload console channel
-  if(init_console_channel() == TRUE) {
+ if(init_console_channel() == TRUE) {
+//	if (FALSE) {  
     cs_boot_msg_print(yloc);
 
     lk_print_xy(0, yloc++, "Init Console ................................[Pass]");
@@ -188,7 +176,8 @@ void Main(int boot_mode)
     // init offload channel
     lk_print_xy(0, yloc, "Init IO Offload .............................[    ]");
     cs_puts("Init IO Offload .............................[    ]");
-    if(init_offload_channel() == TRUE) {
+
+    if(init_offload_channel((QWORD*)g_io_bitmap) == TRUE) {
       lk_print_xy(xloc, yloc++, "Pass");
       cs_puts("\b\b\b\b\bPass\n");
     }
@@ -205,7 +194,7 @@ void Main(int boot_mode)
 
     // init offload channel
     lk_print_xy(0, yloc, "Init IO Offload .............................[    ]");
-    if(init_offload_channel() == TRUE) {
+    if(init_offload_channel((QWORD*)g_io_bitmap) == TRUE) {
       lk_print_xy(xloc, yloc++, "Pass");
     }
     else {

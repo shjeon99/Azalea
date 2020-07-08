@@ -167,7 +167,7 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
  * @brief mmap unikernels' whole memory
  * @return success (0), fail (1)
  */
-unsigned long mmap_unikernels_memory(int n_unikernels)
+unsigned long mmap_unikernels_memory()
 {
   unsigned long kernels_mem_base_pa_len = 0;
   unsigned long channel_mem_base_pa_len = 0;
@@ -176,13 +176,13 @@ unsigned long mmap_unikernels_memory(int n_unikernels)
 
   offload_fd = open("/dev/lk", O_RDWR | O_SYNC) ;
   if ( offload_fd < 0 ) {
-    printf("/dev/offload open error\n") ;
+    printf("/dev/lk open error\n") ;
 
-    return 1;
+    return 0;
   }
 
-  g_kernels_mem_base_pa = (unsigned long) UNIKERNELS_MEM_BASE_PA; 
-  kernels_mem_base_pa_len = ((unsigned long) (MEMORYS_PER_NODE * n_unikernels)) << 30; 
+  g_kernels_mem_base_pa =  (unsigned long) UNIKERNELS_MEM_BASE_PA  ; 
+  kernels_mem_base_pa_len = (mem_end - mem_start) << 30 ;  
 
   g_mmap_unikernels_mem_base_va = (unsigned long) mmap(NULL, kernels_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, g_kernels_mem_base_pa);
 
@@ -190,6 +190,7 @@ unsigned long mmap_unikernels_memory(int n_unikernels)
     printf("mmap failed.\n") ;
     close(offload_fd) ;
 
+		close(offload_fd) ;
     return (0);
   }
 
@@ -208,7 +209,6 @@ unsigned long mmap_unikernels_memory(int n_unikernels)
   printf("mmap = virtual address: 0x%lx physical address begin: 0x%lx end: 0x%lx\n", g_mmap_unikernels_mem_base_va, g_kernels_mem_base_pa, g_kernels_mem_base_pa + kernels_mem_base_pa_len) ;
 
   close(offload_fd) ;
-
   return kernels_mem_base_pa_len;
 }
 

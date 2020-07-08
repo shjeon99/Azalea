@@ -25,15 +25,22 @@ int main(int argc, char *argv[])
   int fd = 0;
   char Achar  = 0;
   int ret = 0;
-  int loc = 0;
+  unsigned int loc = 0;
+  unsigned long tmp ;
+  unsigned long offset = 0 ;
   int i = 0;
 
   // if the number is now set, set the default number (0) 
   loc = (argc < 2) ? 0 : atoi(argv[1]);
 
+  if ( loc > MAX_UNIKERNEL ) return -1 ;
+
   // Print the console
-  g_vcon = malloc(sizeof(PAGE_4K * MAX_UNIKERNEL));
-  g_screen = (char *) g_vcon + PAGE_4K*loc;
+  g_vcon = malloc(PAGE_4K * MAX_UNIKERNEL);
+  if (g_vcon == NULL ) return -1 ;
+  
+  offset = loc * PAGE_4K ;
+  g_screen = (char *) ((unsigned long) g_vcon + offset ) ;
 
   // 
   fd = open("/dev/lk", O_RDONLY);

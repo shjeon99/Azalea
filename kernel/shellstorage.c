@@ -25,8 +25,8 @@ void shell_storage_area_init(void)
   // log
   log_buffer = (char*) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET + LOG_LENGTH);
   log_front = (unsigned int *) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET);
-  log_rear = (unsigned int *) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET + 4);    
-  lk_memset(log_front, 0, (MAX_LOG_COUNT+1) * LOG_LENGTH);
+  log_rear = (unsigned int *) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET + 4);   
+  //lk_memset(log_front, 0, (MAX_LOG_COUNT+1) * LOG_LENGTH);
 
   // shell_storage
   g_ss_area = (SHELL_STORAGE_AREA *) (CONFIG_SHARED_MEMORY + SHELL_STORAGE_START_OFFSET);
@@ -45,7 +45,7 @@ void shell_enqueue(const char * msg)
     spinlock_unlock(&log_lock);
     return ;
   }
- 
+
   lk_memcpy(log_buffer+((*log_rear)*64), msg, lk_strlen(msg)) ; 
   (*log_rear)++ ;
   spinlock_unlock(&log_lock) ;

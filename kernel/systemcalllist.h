@@ -49,7 +49,6 @@
 #define SYSCALL_sys_shmdt               537
 #define SYSCALL_sys_shmctl              538
 
-
 #define SYSCALL_do_exit                 550
 #define SYSCALL_block_current_task      551
 #define SYSCALL_reschedule              552
@@ -78,4 +77,9 @@
 #define SYSCALL_sys3_rewinddir          908
 
 #define SYSCALL_print_log               854
+
+#define SYSCALL_sys_usystem						 1000
+
+#define CMD_DEBUG											 9000
+#define CMD_EXCEPTION									 9001
 #endif // __SYSTEMCALLLIST_H__
