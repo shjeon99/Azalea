@@ -607,6 +607,9 @@ void sys3_off_system(job_args_t *job_args)
   pthread_mutex_unlock(&ch->mutex);
 }
 
+extern int optind, opterr, optopt ;
+extern char *optarg ;
+
 char *make_command( int ukid, char *command_string)
 {
   #define MAX_ARGS  10
@@ -622,8 +625,9 @@ char *make_command( int ukid, char *command_string)
   int opt, cores = 0, mem = 0, ret = 0 ;
   FILE *fp = NULL ;
 
-  sprintf(cmdline, "START %s", command_string) ;
+  sprintf(cmdline, "./START %s", command_string) ;
 
+#if 0
   char *p2 = strtok(cmdline, " ") ;
 
   while ( p2 && ac < MAX_ARGS - 1 )
@@ -650,7 +654,9 @@ char *make_command( int ukid, char *command_string)
 
  if ( (optind+1) == ac )
   {
+			fprintf(stderr, "usystem : %s\n", av[optind++] ) ;
       full_filename = realpath(av[optind++], NULL) ;
+			fprintf(stderr, "usystem\n" ) ;
   }
  else
   {
@@ -675,7 +681,7 @@ char *make_command( int ukid, char *command_string)
       return NULL ;
   }
 
-  ret = sprintf(cmd,"START %s", full_filename ) ;
+  ret = sprintf(cmd,"./START %s", full_filename ) ;
 
   free(full_filename) ;
 
@@ -683,6 +689,15 @@ char *make_command( int ukid, char *command_string)
     ret += sprintf(cmd+ret, " -c %d", cores ) ;
   if ( mem != 0 )
     ret += sprintf(cmd+ret, " -m %d", mem ) ;
+#else
+ 
+  cmd = malloc(MAX_PATH) ;
+  if ( cmd == NULL )
+	return NULL ;
+
+  strncpy(cmd, cmdline, strlen(cmdline)) ;
+
+#endif
 
   return cmd;
 }
@@ -711,13 +726,13 @@ void sys_off_usystem(job_args_t *job_args)
 
 	ukid = (int)in_pkt->param1 ; 
   input = (char *) get_va(in_pkt->param2);
-   
+  
 	command = make_command(ukid, input) ;
 
 	if ( command == NULL )
 	{	
-		iret = -1 ;
-    fprintf(stderr, "FIO SYSTEM: %s\n", input);
+	    iret = -1 ;
+	    fprintf(stderr, "FIO SYSTEM: %s\n", input);
 	}
 	else
 	{

@@ -502,8 +502,8 @@ int sys_off_usystem(char *command)
   current = get_current();
   mytid = current->id;
 
-  send_offload_message(ocq, mytid, SYSCALL_sys_usystem, g_ukid, get_pa((QWORD) command), 0, 0, 0, 0);
-  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_usystem);
+  send_offload_message(ocq, mytid, SYSCALL_usystem, g_ukid, get_pa((QWORD) command), 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_usystem);
 
   return iret;
 

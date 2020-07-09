@@ -78,7 +78,7 @@
 
 #define SYSCALL_print_log               854
 
-#define SYSCALL_sys_usystem						 1000
+#define SYSCALL_usystem								 1000
 
 #define CMD_DEBUG											 9000
 #define CMD_EXCEPTION									 9001

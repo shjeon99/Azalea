@@ -85,7 +85,7 @@ int main(int argc, char **argv )
 						return -1 ;
 			}
     } 
- 
+
   if ( (optind+1) == argc )
 	{
 			strcpy(filename, argv[optind++]) ;		   
@@ -100,7 +100,7 @@ int main(int argc, char **argv )
 
   if ( full_filename == NULL )
 	{
-		  printf("[usage] : START <disk.img> -c [CPU] -m [MEMORY]\n");
+		  printf("Can't find %s\n");
 			return -1 ;
   }
 
@@ -166,6 +166,7 @@ int main(int argc, char **argv )
   ukid = ioctl(fd_lk, AZ_PARAM, &parm);
   if (ukid < 0) {
     print_kmsg(fd_lk, "START: Sending parameters failed.\n");
+		printf("FAIL to create Unikernel\n") ;
     close(fd_lk);
     free(buf);
     return -1;

@@ -58,8 +58,8 @@ _syscall1(BOOL, sys_free, void*, address);
 
 _syscall0(size_t, get_start_tsc);
 _syscall0(size_t, get_freq);
+_syscall1(int, usystem, char*, command);
 
-_syscall1(int, sys_usystem, char*, command);
 // Network offloading related systemcalls
 _syscall2(int, sys_gethostname, char *, name, size_t, len);
 _syscall1(struct hostent *, sys_gethostbyname, char *, name);

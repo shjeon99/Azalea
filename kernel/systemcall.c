@@ -407,7 +407,8 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
   case SYSCALL_sys_shmctl:
     ret_code = (QWORD) shmctl((int) param1, (int) param2, (struct shmid_ds *) param3);
     break;
-	case SYSCALL_sys_usystem:
+	case SYSCALL_usystem:
+		lk_print("usystem call : %s\n", param1) ;
 		ret_code = (QWORD) sys_off_usystem((char*)param1);
 		break;
   default:
