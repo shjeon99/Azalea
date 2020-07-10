@@ -1,0 +1,27 @@
+#/bin/bash
+
+unikernel_cnt=`find /sys/azalea/* -maxdepth 1 -type d | wc -l`
+total_mem=`cat /sys/azalea/meminfo  | awk '{print $2 - $1}'`
+total_core=`cat /sys/azalea/cpuinfo | head -n 1 | awk '{print $5}'`
+used_core=0
+used_mem=0
+
+count=$((unikernel_cnt-1)) 
+
+echo "===================================================================="
+echo -e "ID\tno.core\t\tMem\tName" 
+echo "===================================================================="
+for i in $(seq 0 $count)
+do
+	core=`cat /sys/azalea/${i}/cpuinfo | awk '{print NF}'`
+	mem=`cat /sys/azalea/${i}/meminfo  | awk '{print $2 - $1}'`
+	filename=`cat /sys/azalea/${i}/info`
+	used_core=$(($used_core + $core))
+	used_mem=$(($used_mem + $mem)) 
+	echo -e $i '\t'	$core '\t\t' $mem '\t' $filename
+done
+echo "===================================================================="
+echo "Core:" $total_core "total," $used_core "used"
+echo " Mem:" $total_mem "GB total," $used_mem "GB used"
+echo "===================================================================="
+
